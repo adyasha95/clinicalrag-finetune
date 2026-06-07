@@ -1,0 +1,36 @@
+# Secrets
+.env
+*.env.*
+
+# Model checkpoints and weights
+checkpoints/
+*.bin
+*.safetensors
+*.pt
+*.pth
+
+# Generated datasets (reproducible from scripts)
+data/sft_dataset/
+data/dpo_dataset/
+
+# Feedback DB (local state)
+data/feedback.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# W&B
+wandb/
+
+# OS
+.DS_Store
