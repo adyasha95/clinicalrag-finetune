@@ -1,0 +1,31 @@
+# Core ML
+torch>=2.3,<2.5
+transformers>=4.43,<5.0
+datasets>=2.20,<3.0
+accelerate>=0.31,<1.0
+
+# Fine-tuning
+peft>=0.11,<1.0
+trl>=0.9,<1.0
+bitsandbytes>=0.43,<0.45
+
+# Experiment tracking
+wandb>=0.17,<1.0
+
+# Inference serving
+vllm>=0.5,<0.7
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30,<1.0
+
+# LangChain integration (for chain_adapter.py)
+langchain>=0.2,<0.4
+langchain-anthropic>=0.1,<0.3
+langchain-openai>=0.1,<0.3
+langchain-core>=0.2,<0.4
+
+# Utilities
+python-dotenv>=1.0,<2.0
+pydantic>=2.7,<3.0
+
+# Dev / testing
+pytest>=8.0,<9.0

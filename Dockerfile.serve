@@ -1,0 +1,60 @@
+# Inference-only container for the fine-tuned clinical RAG model.
+# Builds a minimal image with vLLM + the OpenAI-compatible server.
+#
+# Build:
+#   docker build -f Dockerfile.serve -t clinicalrag-serve .
+#
+# Run (expects model adapter in ./checkpoints/dpo-adapter on host):
+#   docker run --gpus all \
+#     -v $(pwd)/checkpoints:/app/checkpoints:ro \
+#     -e FINETUNED_MODEL_PATH=/app/checkpoints/dpo-adapter \
+#     -p 8000:8000 \
+#     clinicalrag-serve
+
+FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3.11 \
+        python3.11-dev \
+        python3-pip \
+        git \
+        curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
+    && update-alternatives --install /usr/bin/python python3 /usr/bin/python3.11 1
+
+WORKDIR /app
+
+# Install vLLM and serving dependencies first (large layer, cache it)
+RUN pip install --upgrade pip && \
+    pip install \
+        torch==2.3.1 \
+        vllm>=0.5,<0.7 \
+        fastapi>=0.111,<1.0 \
+        uvicorn[standard]>=0.30,<1.0 \
+        pydantic>=2.7,<3.0
+
+# Install the rest of the project requirements
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Copy only the src package (no training scripts or data)
+COPY src/ ./src/
+
+# Model weights are mounted at runtime, not baked into the image.
+# Set a default path; override with FINETUNED_MODEL_PATH env var.
+ENV FINETUNED_MODEL_PATH=/app/checkpoints/dpo-adapter \
+    SERVER_HOST=0.0.0.0 \
+    SERVER_PORT=8000
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+ENTRYPOINT ["python3", "-m", "src.serve.server"]
